@@ -1,0 +1,80 @@
+Pulse energy 1 (J): 0.0025
+Pulse energy 2 (J): 0
+Frequency 1 (Hz): 370370000000000
+Frequency 2 (Hz): 490000000000000
+Bandwidth 1 (Hz): 8700000000000
+Bandwidth 2 (Hz): 20000000000000
+SG order 1: 2
+SG order 2: 4
+CEP 1 (rad): 0
+CEP 2 (rad): 0
+Delay 1 (s): 0
+Delay 2 (s): 0
+GDD 1 (s^-2): 0
+GDD 2 (s^-2): 1e-28
+TOD 1 (s^-3): 0
+TOD 2 (s^-3): 0
+Phase material 1 index: 2
+Phase material 2 index: 2
+Phase material thickness 1 (mcr.): 0
+Phase material thickness 2 (mcr.): 0
+Beam 1 description: 0 0 1 0 0 0 0 0 0 0 0; 
+Beam 1 mode type: 1
+Beam 2 description: 0 0 1 0 0 0 0 0 0 0 0; 
+Beam 2 mode type: 1
+Beamwaist 1 (m): 0.0004
+Beamwaist 2 (m): 9e-05
+x offset 1 (m): 0
+x offset 2 (m): 0
+y offset 1 (m): 0
+y offset 2 (m): 0
+z offset 1 (m): 0
+z offset 2 (m): 0
+NC angle 1 (rad): 0
+NC angle 2 (rad): 0
+NC angle phi 1 (rad): 0
+NC angle phi 2 (rad): 0
+Polarization 1 (rad): 0
+Polarization 2 (rad): 1.5707963267949
+Circularity 1: 0
+Circularity 2: 0
+Material index: 1
+Alternate material index: 0
+Crystal theta (rad): 0.509636141582344
+Crystal phi (rad): 0.523598775598299
+Grid width (m): 0.00096
+Grid height (m): 0
+dx (m): 1.5e-05
+Time span (s): 1.992e-13
+dt (s): 3e-16
+Thickness (m): 3e-05
+dz (m): 5e-08
+Nonlinear absorption parameter: 0
+Initial carrier density (m^-3): 0
+Band gap (eV): 0
+Effective mass (relative): 0
+Drude gamma (Hz): 0
+Propagation mode: 0
+Batch mode: 0
+Batch destination: 0
+Batch steps: 1
+Batch mode 2: 0
+Batch destination 2: 0
+Batch steps 2: 1
+Sequence: 
+Fitting: 720e12 760e12 50
+Fitting mode: 1
+Output base path: C:/Users/eugen/OneDrive/Documents/optics_photonics/LightwaveExplorerWin64/BBO_attempt_1_test
+Field 1 from file type: 0
+Field 2 from file type: 0
+Field 1 file path: 
+Field 2 file path: 
+Fitting reference file path: 
+Material name: BBO
+Sellmeier reference: D. Zhang et al., Optics Communications 184, 485 (2000).
+Chi2 reference: I. Shoji, et al., J. Opt. Soc. Am. B 16, 620-624 (1999). Relative sign based on Bache et al.
+Chi3 reference: M. Bache, et al. Optical Materials Express 3, 357-392 (2013).
+2.7359,0.01878,0,-0.01822,0,0,1,0,0,1,0,0,1,-0.01471,0.0006081,-6.74e-05,0,0,0,0,0,0
+2.3753,0.01224,0,-0.01667,0,0,1,0,0,1,0,0,1,-0.01627,0.0005716,-6.305e-05,0,0,0,0,0,0
+2.3753,0.01224,0,-0.01667,0,0,1,0,0,1,0,0,1,-0.01627,0.0005716,-6.305e-05,0,0,0,0,0,0
+Code version: 2026.1
