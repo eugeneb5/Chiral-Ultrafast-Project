@@ -5,13 +5,13 @@ import matplotlib.pyplot as plt
 # help(LightwaveExplorer)
 
 
-results_zip = "Data_BBO_sim/BBO_10percent_test.zip"
+results_zip = "Data_BBO_sim/BBO_500microns_thick_test.zip"
 
 # results_zip = "Data_BBO/BBO_cont"
 
 sim = Le.lightwaveExplorerResult(results_zip, loadFieldArray=True)
 
-# print(vars(sim_30_microns).keys())   #we are interested in Ext_x, Ext_y, spectrum_x, spectrum_y
+print(vars(sim).keys())   #we are interested in Ext_x, Ext_y, spectrum_x, spectrum_y
 
 input_polarisation = sim.polarizationAngle1
 
@@ -49,7 +49,9 @@ print("crystal thickness in microns: "+str(crystalThickness*1e6))
 # print(type(sim_30_microns.Ext_x))   #(664,400) shape, 664 is for the time, 400 is for the x component , is a numpy array
 
 E_x = sim.Ext_x  #so this is the total pulse, we just want to look at the on axis component!!
-E_x_onaxis = E_x[:,200]
+
+midpoint = E_x.shape[1]//2
+E_x_onaxis = E_x[:,midpoint]
 
 
 N_time = sim.Ntime
