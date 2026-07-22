@@ -106,7 +106,8 @@ N_time, time_step_fs,full_E_field_no_BBO,space_array = define_pulse(acherus_test
 
 
 
-plt.imshow(np.abs(hilbert(full_E_field_no_BBO, axis=0))**2, origin='lower', aspect='auto', cmap='Blues')
+# plt.imshow(np.abs(hilbert(full_E_field_no_BBO, axis=0))**2, origin='lower', aspect='auto', cmap='Blues')
+plt.imshow(np.abs(full_E_field_no_BBO)**2, origin='lower', aspect='auto', cmap='Blues')
 
 # plt.imshow(np.abs(E_xt_no_BBO)**2, origin='lower', aspect='auto', cmap='Reds', alpha=0.5)
 
@@ -233,21 +234,21 @@ def Lens_diameter(R,L_0):
 
 
 
-def lens_and_propagation(U_xw, z, material_url,R_lens,D_lens, space_array=space_array, w_array=w_array):  #space_array is in microns!!! but please have R and D in terms of metres!!!!
+def lens_and_propagation(U_xw, z, material_url,R_lens,L_0, space_array=space_array, w_array=w_array):  #space_array is in microns!!! but please have R and D in terms of metres!!!!
 
 
     U_xw_after_lens = np.zeros_like(U_xw, dtype=complex)
     c = 3e8
     # space_array_m = space_array #convert back into metres here!
 
-    def L_x(R,D,x):
+    def L_x(R,L_0,x):
 
-        sum_1 = np.sqrt(R**2 - x**2)
-        sum_2 = np.sqrt(R**2 - (D/2)**2)
+        # sum_1 = np.sqrt(R**2 - x**2)
+        # sum_2 = np.sqrt(R**2 - (D/2)**2)
         
-        sum = sum_1 - sum_2
+        # sum = sum_1 - sum_2
 
-        # sum = L_0 - (R - np.sqrt(R**2 - x**2))
+        sum = L_0 - (R - np.sqrt(R**2 - x**2))
 
         assert np.all(np.isreal(sum)), "some elements are complex!"
 
@@ -265,7 +266,7 @@ def lens_and_propagation(U_xw, z, material_url,R_lens,D_lens, space_array=space_
     kx_array = np.fft.fftshift(np.fft.fftfreq(N_x, d=dx)) * 2 * np.pi  #is the same for all of w_i, x arrays - so just do once...
 
 
-    L = L_x(R_lens, D_lens, space_array)  #only need once...
+    L = L_x(R_lens, L_0, space_array)  #only need once...
 
     U_w_size = U_xw.shape[0]
 
@@ -307,15 +308,16 @@ def lens_and_propagation(U_xw, z, material_url,R_lens,D_lens, space_array=space_
     #now transform back to time domain...
     U_xw_unaligned = np.fft.ifftshift(U_xw_after_lens, axes=0)
     U_xt_final_complex = np.fft.ifft(U_xw_unaligned, axis=0)
-    E_field_final_real = 2*np.real(U_xt_final_complex)  #double check if need???
-
+    # E_field_final_real = 2*np.real(U_xt_final_complex)  #double check if need???
+   
 
     plt.imshow(np.abs(U_xt_final_complex)**2, origin='lower', aspect='auto', cmap='viridis')
     plt.xlabel("Space (x) / microns")
     plt.ylabel("Time (t) / fs")
     plt.show()
 
-    return E_field_final_real
+    return U_xt_final_complex
+
 
 
 
@@ -342,12 +344,12 @@ def load_array(load_name, plot_mode = False):   #file saved as "..., .npy"
 
 
     U_xt = np.load(load_name)
-
+    U_xt_real = np.real(U_xt)
     
 
     if plot_mode:
 
-        plt.imshow(np.abs(hilbert(U_xt,axis=0))**2, origin='lower', aspect='auto')
+        plt.imshow(np.abs(hilbert(U_xt_real,axis=0))**2, origin='lower', aspect='auto')
         plt.xlabel("Space (x) / microns")
         plt.ylabel("Time (t) / fs")
         plt.show()
@@ -435,7 +437,7 @@ focal_point = focal_length_at_wavelength(R_lens, url, 810e-9)  #expect in mm
 
 z_0 = round_to_nearest_mm(focal_point)
 
-print(focal_point, z_0)
+# print(focal_point, z_0)
 
 
 
@@ -446,7 +448,7 @@ for z in z_array:
 
     print("starting calculation for z = "+str(z))
 
-    E_field = lens_and_propagation(U_xw, z, url, R_lens,D_lens, space_array = space_array, w_array = w_array)
+    E_field = lens_and_propagation(U_xw, z, url, R_lens,L_0, space_array = space_array, w_array = w_array)
     
     # E_field = lens_and_propagation(U_xw_2, z, url, R_lens,D_lens, space_array = space_array_2, w_array = w_array_2)
 
@@ -475,7 +477,8 @@ U_xt_after_2 = load_array("E_field_z_0.1005.npy",plot_mode= True)
 # plt.show()
 
 
-
+print("SIZE OF ARRAY:")
+print(U_xt_after.shape)
 
 
 

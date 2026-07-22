@@ -68,19 +68,19 @@ initial_density = 1e9       # initial electron density
 # raman_response_time = 70e-15      # Optional: damping time (default: None)
 # raman_rotational_time = 62.5e-15  # Optional: fundamental time (default: None)
 
-[grid_parameters.SPACE]
-nodes = 1000  #might be too little??
+[grid_parameters.SPACE]  #is radial coordinate!!!! so min must be at 0!
+nodes = 1500  #might be too little??  #half of total...since change to radial!!
 space_min = 0.0
-space_max = 50e-3
+space_max = 7500e-6
 
 [grid_parameters.AXIS]   #propagation distance z!!
-nodes = 100
+nodes = 3000
 axis_min = 0.0
-axis_max = 1e-3  
+axis_max = 3e-3  
 snapshots = 10  #these are equally spaced!
 
 [grid_parameters.TIME]
-nodes = 1024
+nodes = 2048
 time_min = -256e-15
 time_max = 256e-15
 
@@ -90,7 +90,7 @@ time_max = 256e-15
 # pml_width = 0.2     # PML thickness (in space_max units)
 
 [pulse_parameters.GAUSSIAN]
-wavelength = 800e-9
+wavelength = 810e-9
 waist = 3.57e-3
 duration = 85e-15
 energy = 6.7e-3
