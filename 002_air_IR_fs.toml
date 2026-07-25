@@ -74,13 +74,13 @@ space_min = 0.0
 space_max = 7500e-6
 
 [grid_parameters.AXIS]   #propagation distance z!!
-nodes = 3000
+nodes = 6000
 axis_min = 0.0
-axis_max = 3e-3  
-snapshots = 10  #these are equally spaced!
+axis_max = 0.3  #try 0.3m, so 300mm after !
+snapshots = 50  #these are equally spaced! maybe get more next time? 
 
 [grid_parameters.TIME]
-nodes = 2048
+nodes = 2048   #so 512 t_total and 0.25 dt
 time_min = -256e-15
 time_max = 256e-15
 
@@ -91,10 +91,10 @@ time_max = 256e-15
 
 [pulse_parameters.GAUSSIAN]
 wavelength = 810e-9
-waist = 3.57e-3
-duration = 85e-15
-energy = 6.7e-3
-# focal_length = 2.0    # Optional (default: None)
+waist = 2.5e-3  #radius?
+duration = 50e-15   #NEED TO TEST DIFFERENT VALUES HERE!!
+energy = 8e-4
+focal_length = 0.2    # Optional (default: None)
 # chirp = 0.890       # Optional (default: None)
 # gauss_order = 3     # Optional (default: 2)
 
@@ -123,12 +123,12 @@ cross_section = 2.81e-128 # Required
 
 # Choose one model block under [dispersion.*]
 # Available options: FULL, PARTIAL
-# [dispersion.FULL]
+[dispersion.FULL]
 
 # Partial option:
-[dispersion.PARTIAL]
+# [dispersion.PARTIAL]
 # Provide coefficients for Taylor expansion of k(w) at central laser frequency
-k2 = 2e-28  # Required
+# k2 = 2e-28  # Required
 # k3 = 3e-43  # Optional
 # k4 = 1e-58  # Optional
 # k5 = 5e-74  # Optional

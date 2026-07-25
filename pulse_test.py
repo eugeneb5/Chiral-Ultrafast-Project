@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import LightwaveExplorer as Le
 from scipy.signal import hilbert
+from scipy.interpolate import interp1d
+
 
 # help(Le)
 
@@ -63,7 +65,7 @@ def define_pulse(zipname, read_char = True, pol_y = False):
         print("fStep in THz = "+str(fStep*1e-12))
         print("input beam waist in microns of: "+str(beamwaist1*1e6))
         print("crystal thickness in microns: "+str(crystalThickness*1e6))
-        print("timestep in fs: "+str())
+        print("timestep in fs: "+str(time_step_fs*1e15))
         
         plt.plot(time_array, E_onaxis)
         plt.show()
@@ -88,7 +90,7 @@ acherus_test = "test_pulse_for_acherus_1.zip"
 
 # N_time,  time_step_fs ,full_E_field_BBO ,space_array = define_pulse(results_zip, read_char = False)   #space_array is in microns!
 
-N_time, time_step_fs,full_E_field_no_BBO,space_array = define_pulse(acherus_test,read_char = False ,pol_y=True)
+N_time, time_step_fs,full_E_field_no_BBO,space_array = define_pulse(acherus_test,read_char = True ,pol_y=True)
 
 # N_time_2, time_step_fs_2,E_field_2,space_array_2 = define_pulse(test_pulse_2,read_char = False ,pol_y=False)
 
@@ -234,39 +236,63 @@ def Lens_diameter(R,L_0):
 
 
 
-def lens_and_propagation(U_xw, z, material_url,R_lens,L_0, space_array=space_array, w_array=w_array):  #space_array is in microns!!! but please have R and D in terms of metres!!!!
+def lens_and_propagation(U_xw, z, material_url,R_lens,L_0, space_array=space_array, w_array=w_array, plot_mode = False):  #space_array is in microns!!! but please have R and D in terms of metres!!!!
 
 
     U_xw_after_lens = np.zeros_like(U_xw, dtype=complex)
     c = 3e8
     # space_array_m = space_array #convert back into metres here!
-
-    def L_x(R,L_0,x):
-
-        # sum_1 = np.sqrt(R**2 - x**2)
-        # sum_2 = np.sqrt(R**2 - (D/2)**2)
-        
-        # sum = sum_1 - sum_2
-
-        sum = L_0 - (R - np.sqrt(R**2 - x**2))
-
-        assert np.all(np.isreal(sum)), "some elements are complex!"
-
-        return sum
-    
-    n_array = ref_index_array(material_url, w_array) #should be same size as w_array... could check?
-
-    assert len(n_array) == len(w_array), "something wrong with ref index array" 
-
     N_x = len(space_array)
     dx = space_array[1] - space_array[0]
     # print("checking values")
     # print(dx, N_x)
     # print(space_array)
+    centre_index = N_x//2
+
+    #initiate R grid:   we use r here for the grid co-ordinate; R is for lens radius of curv.
+
+    X, Y = np.meshgrid(space_array, space_array)
+    r_grid = np.sqrt(X**2+ Y**2)
+
+    r_array = space_array[centre_index:] #this is actual r grid to use
+
+
+    #define lens function...
+    def L_r(R,L_0,r):  #r has to be strictly less than D!
+
+        # sum_1 = np.sqrt(R**2 - x**2)
+        # sum_2 = np.sqrt(R**2 - (D/2)**2)
+        
+        # sum = sum_1 - sum_2   
+        # assert r**2 <= R**2, "problem with grid size, r is too large!"
+
+        thickness = L_0 - (R - np.sqrt(R**2 - r**2))
+
+        assert np.all(np.isreal(thickness)), "some elements are complex!"
+
+        return thickness
+
+
+
+    #ref index stuff....depends on w, not spatial coords
+    n_array = ref_index_array(material_url, w_array) #should be same size as w_array... could check?
+
+    assert len(n_array) == len(w_array), "something wrong with ref index array" 
+
+   
+
+    #pre-create 2D k_array; 
     kx_array = np.fft.fftshift(np.fft.fftfreq(N_x, d=dx)) * 2 * np.pi  #is the same for all of w_i, x arrays - so just do once...
+    KX, KY = np.meshgrid(kx_array, kx_array)
+    K_radial_sq = KX**2 + KY**2
 
 
-    L = L_x(R_lens, L_0, space_array)  #only need once...
+
+
+
+
+    L = L_r(R_lens, L_0, r_grid)  #only need once...
+
 
     U_w_size = U_xw.shape[0]
 
@@ -277,32 +303,44 @@ def lens_and_propagation(U_xw, z, material_url,R_lens,L_0, space_array=space_arr
         if w_array[i]<=0:
             continue  #i.e. restart if is a negative freq..
        
-        # print("iteration index: "+str(i) +"of max index" +str(U_w_size))
+        print("iteration index: "+str(i) +"of max index" +str(U_w_size))
         w_i = w_array[i]
         k = w_i/3e8  #k_magnitude!
         # wavelength = 2*np.pi/k *1e9  #so in nm!
         n = n_array[i]
         # print(w_i,n,wavelength)
         U_xwi = U_xw[i,:]  #this is the w_i slice
-        
+
+
+        #turn U_xwi into a 2D function:
+        U_r_wi = U_xwi[centre_index:]
+
+        interp_func = interp1d(r_array, U_r_wi, bounds_error=False, fill_value=0.0j) #really clever fct! e.g. for a given r, associates an E field value!
+        U_xy_wi = interp_func(r_grid)
+
+
 
         #phase mask first
         phi = (w_i/c)*(n-1)*L
 
-        #apply lens phase effect
 
-        U_xwi_after_lens = U_xwi * np.exp(1j * phi)
+        #apply lens phase effect
+        U_xy_wi_after_lens = U_xy_wi * np.exp(1j * phi)
+
+
 
         #now propogate using ASW
-        # U_kx = np.fft.fftshift(np.fft.fft(U_xwi_after_lens))
-        U_kx = np.fft.fftshift(np.fft.fft(np.fft.ifftshift(U_xwi_after_lens)))
+        U_k = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(U_xy_wi_after_lens)))
         # propogation_factor = np.exp(1j * k * z) * np.exp(-1j * (kx_array**2) / (2 * k) * z)
-        propogation_factor = np.exp(-1j * (kx_array**2) / (2 * k) * z)
-        U_kx_propagated = U_kx * propogation_factor
+        propogation_factor = np.exp(-1j * (K_radial_sq) / (2 * k) * z)
+        U_k_propagated = U_k * propogation_factor
+
 
         #save array
-        # U_xw_after_lens[i, :] = np.fft.ifft(np.fft.ifftshift(U_kx_propagated))
-        U_xw_after_lens[i, :] = np.fft.fftshift(np.fft.ifft(np.fft.ifftshift(U_kx_propagated)))
+        
+        U_xy_wi_after_lens = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(U_k_propagated)))
+
+        U_xw_after_lens[i,:] = U_xy_wi_after_lens[centre_index,:]
 
 
     #now transform back to time domain...
@@ -310,11 +348,109 @@ def lens_and_propagation(U_xw, z, material_url,R_lens,L_0, space_array=space_arr
     U_xt_final_complex = np.fft.ifft(U_xw_unaligned, axis=0)
     # E_field_final_real = 2*np.real(U_xt_final_complex)  #double check if need???
    
+    if plot_mode: 
+        plt.imshow(np.abs(U_xt_final_complex)**2, origin='lower', aspect='auto', cmap='viridis')
+        plt.xlabel("Space (x) / microns")
+        plt.ylabel("Time (t) / fs")
+        plt.show()
 
-    plt.imshow(np.abs(U_xt_final_complex)**2, origin='lower', aspect='auto', cmap='viridis')
-    plt.xlabel("Space (x) / microns")
-    plt.ylabel("Time (t) / fs")
-    plt.show()
+    return U_xt_final_complex
+
+
+
+
+#the spedup vers - from Gemini...
+
+
+def lens_and_propagation_spedup(U_xw, z, material_url, R_lens, L_0, space_array, w_array, plot_mode=False):  
+
+    U_xw_after_lens = np.zeros_like(U_xw, dtype=complex)
+    c = 3e8
+    
+    N_x = len(space_array)
+    dx = space_array[1] - space_array[0]
+    centre_index = N_x // 2
+
+    # 1. Spatial Grids
+    X, Y = np.meshgrid(space_array, space_array)
+    r_grid = np.sqrt(X**2 + Y**2)
+    r_array = space_array[centre_index:] 
+
+    # 2. Spherical Lens Function
+    def L_r(R, L_0, r):  
+        safe_r_sq = np.clip(r**2, 0, R**2)
+        thickness = L_0 - (R - np.sqrt(R**2 - safe_r_sq))
+        assert np.all(np.isreal(thickness)), "some elements are complex!"
+        return thickness
+
+    L = L_r(R_lens, L_0, r_grid) 
+    
+    n_array = ref_index_array(material_url, w_array) 
+    assert len(n_array) == len(w_array), "something wrong with ref index array" 
+
+    # --- SPEEDUP 1: Zero-Shift K-Grids ---
+    # By omitting fftshift here, the 0-frequency stays at index [0,0], 
+    # which perfectly matches the native output of np.fft.fft2!
+    kx_array = np.fft.fftfreq(N_x, d=dx) * 2 * np.pi  
+    KX, KY = np.meshgrid(kx_array, kx_array)
+    K_radial_sq = KX**2 + KY**2
+
+    # --- SPEEDUP 2: Pre-calculated Interpolation Map ---
+    # Instead of interp1d, we figure out exactly which indices in r_array 
+    # each pixel in r_grid corresponds to, and save the weights.
+    max_idx = len(r_array) - 1
+    r_idx_exact = r_grid / dx
+    
+    idx_low = np.clip(np.floor(r_idx_exact).astype(int), 0, max_idx)
+    idx_high = np.clip(idx_low + 1, 0, max_idx)
+    
+    weight_high = r_idx_exact - idx_low
+    weight_low = 1.0 - weight_high
+    
+    # Mask to zero out the extreme corners of the square grid
+    valid_mask = (r_grid <= r_array[-1])
+
+    U_w_size = U_xw.shape[0]
+
+    for i in range(U_w_size):  
+        
+        if w_array[i] <= 0:
+            continue  
+        print("iteration index: "+str(i) +"of max index" +str(U_w_size))
+        w_i = w_array[i]
+        k = w_i / c  
+        n = n_array[i]
+        
+        U_xwi = U_xw[i, :] 
+        U_r_wi = U_xwi[centre_index:]
+
+        # --- SPEEDUP 2 applied ---
+        # Lightning-fast vectorized linear interpolation using the pre-calculated maps
+        U_xy_wi = (U_r_wi[idx_low] * weight_low + U_r_wi[idx_high] * weight_high) * valid_mask
+
+        # Phase mask
+        phi = (w_i / c) * (n - 1) * L
+        U_xy_wi_after_lens = U_xy_wi * np.exp(1j * phi)
+
+        # --- SPEEDUP 1 applied ---
+        # Look ma, no shifts! Direct FFT -> Multiply -> Direct iFFT
+        U_k = np.fft.fft2(U_xy_wi_after_lens)
+        propogation_factor = np.exp(-1j * K_radial_sq / (2 * k) * z)
+        U_k_propagated = U_k * propogation_factor
+        U_xy_wi_propagated = np.fft.ifft2(U_k_propagated)
+
+        # Slice back to 1D
+        U_xw_after_lens[i, :] = U_xy_wi_propagated[centre_index, :]
+
+    # Transform back to time domain
+    U_xw_unaligned = np.fft.ifftshift(U_xw_after_lens, axes=0)
+    U_xt_final_complex = np.fft.ifft(U_xw_unaligned, axis=0)
+   
+    if plot_mode: 
+        plt.imshow(np.abs(U_xt_final_complex)**2, origin='lower', aspect='auto', cmap='viridis')
+        plt.xlabel("Space (x) / microns")
+        plt.ylabel("Time (t) / fs")
+        plt.show()
 
     return U_xt_final_complex
 
@@ -440,17 +576,20 @@ z_0 = round_to_nearest_mm(focal_point)
 # print(focal_point, z_0)
 
 
+#try up to 0.3m here!
 
-z_array = [0,z_0/2 , z_0, 3*z_0/2]
+z_array = [z_0, 3*z_0/2]
+
+# # z_array = np.linspace(0, 0.3, 3001)
 
 
 for z in z_array:
 
     print("starting calculation for z = "+str(z))
 
-    E_field = lens_and_propagation(U_xw, z, url, R_lens,L_0, space_array = space_array, w_array = w_array)
+    E_field = lens_and_propagation_spedup(U_xw, z, url, R_lens,L_0, space_array = space_array, w_array = w_array, plot_mode = True)
     
-    # E_field = lens_and_propagation(U_xw_2, z, url, R_lens,D_lens, space_array = space_array_2, w_array = w_array_2)
+#     # E_field = lens_and_propagation(U_xw_2, z, url, R_lens,D_lens, space_array = space_array_2, w_array = w_array_2)
 
 
     save_array(f"E_field_z_{z}.npy", E_field)
@@ -459,11 +598,11 @@ for z in z_array:
 
 
 
-U_xt_after = load_array("E_field_z_0.npy",plot_mode= True)
+# U_xt_after = load_array("E_field_z_0.npy",plot_mode= True)
 
-U_xt_after_2 = load_array("E_field_z_0.1005.npy",plot_mode= True)
+# U_xt_after_2 = load_array("E_field_z_0.1005.npy",plot_mode= True)
 
-
+# print(np.iscomplex(U_xt_after))
 
 # plt.imshow(np.abs(hilbert(U_xt_after, axis=0))**2, origin='lower', aspect='auto', cmap='Blues')
 
@@ -477,8 +616,6 @@ U_xt_after_2 = load_array("E_field_z_0.1005.npy",plot_mode= True)
 # plt.show()
 
 
-print("SIZE OF ARRAY:")
-print(U_xt_after.shape)
 
 
 

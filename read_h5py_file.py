@@ -22,7 +22,7 @@ print(f"Saved Z-Index:  {z_index}")
 # If the shape is 3D (r, z, t), we want to plot the final z-step.
 # We slice it using [:, -1, :] which means (all radial, last z, all time)
 if e_field_envelope.ndim == 3:
-    plot_data = e_field_envelope[:, -1, :]
+    plot_data = e_field_envelope[:, 1, :]
     print("Detected a 3D array. Plotting the final z-slice.")
 else:
     plot_data = e_field_envelope

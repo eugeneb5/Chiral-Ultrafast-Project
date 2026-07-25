@@ -93,7 +93,7 @@ def run_my_simulation():
 
     center_index = fixed_array.shape[0] // 2
     radial_array = fixed_array[center_index:, :]
-    laser.init_envelope = lambda: radial_array  #replace function in class!!!
+    # laser.init_envelope = lambda: radial_array  #replace function in class!!!
 
 
     laser_field = laser.init_envelope()
@@ -125,12 +125,15 @@ def run_my_simulation():
 
 
 
+    
 
-
-    laser.init_envelope = lambda: centred_laser_field  #replace function in class!!!
+    # laser.init_envelope = lambda: centred_laser_field  #replace function in class!!!
 
 
     check_var = laser.init_envelope()
+
+    print("CHECKING TYPE:")
+    print(check_var.dtype)
 
     plt.figure(figsize=(10, 6))
     plt.imshow(np.abs(check_var)**2, aspect='auto', origin='lower', cmap='Blues') 
